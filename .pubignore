@@ -1,0 +1,17 @@
+# Ignore IDE and tool files
+.dart_tool/
+example/.dart_tool/
+example/build/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+build/
+*.iml
+.idea/
+.vscode/
+
+# Test fixture — not for consumers
+test_app/
+
+# GitHub actions
+.github/
