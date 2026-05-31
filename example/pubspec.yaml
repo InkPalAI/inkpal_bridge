@@ -1,0 +1,12 @@
+name: inkpal_bridge_example
+description: Example app demonstrating InkPal Bridge.
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+  flutter: ">=3.10.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  inkpal_bridge:
+    path: ../
