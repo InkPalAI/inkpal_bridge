@@ -50,7 +50,13 @@ void inkpalRunApp(
   String serverUrl = 'ws://localhost:8765',
   String? licenseKey,
   String? apiUrl,
-  bool enableErrorBoundary = true,
+  // Defaults to `false` in 2.0.x: the visual overlay sits above MaterialApp
+  // and therefore has no Directionality / Overlay ancestor of its own. On
+  // some app shells that combination cascades into hit-test failures that
+  // block coord-taps. The error CATCHER (which feeds `get_runtime_errors`
+  // and friends) is a separate subsystem and remains active regardless of
+  // this flag — set this to `true` only if you want the in-app banner.
+  bool enableErrorBoundary = false,
   bool enableHttpMonitor = true,
   bool runInRelease = false,
   int screenshotWidth = 720,

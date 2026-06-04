@@ -85,13 +85,22 @@ class _InkPalErrorBoundaryState extends State<InkPalErrorBoundary> {
       children: [
         widget.child,
         if (overlay != null)
-          Positioned(
-            left: 0,
-            right: 0,
-            top: 0,
-            child: Material(
-              color: Colors.transparent,
-              child: SafeArea(child: overlay),
+          // `Align` sizes to intrinsic child height (a `Positioned(top:0)`
+          // would give the subtree `0.0<=h<=Infinity` and break hit-test).
+          // The inner `Directionality` is required because this boundary
+          // sits ABOVE the user's MaterialApp, so the overlay's own Text /
+          // RichText widgets have no Directionality ancestor otherwise.
+          Align(
+            alignment: Alignment.topCenter,
+            child: Directionality(
+              textDirection: TextDirection.ltr,
+              child: Material(
+                type: MaterialType.transparency,
+                child: SafeArea(
+                  bottom: false,
+                  child: overlay,
+                ),
+              ),
             ),
           ),
       ],
@@ -156,10 +165,12 @@ class _InkPalErrorBoundaryState extends State<InkPalErrorBoundary> {
                 ],
               ),
             ),
+            // No `tooltip:` here — Tooltip needs an Overlay ancestor, and
+            // this boundary sits above MaterialApp so no Navigator/Overlay
+            // is in scope.
             IconButton(
               icon: const Icon(Icons.close, color: Colors.white, size: 18),
               onPressed: dismiss,
-              tooltip: 'Dismiss',
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(),
             ),

@@ -1,3 +1,38 @@
+## 2.0.0
+
+- **Showcase milestone — no public API removals or signature changes.**
+  Every export from 1.x still imports and compiles. The one behavioural
+  default flip is called out below ("opt-in error overlay").
+- **Opt-in error overlay.** `inkpalRunApp(enableErrorBoundary: ...)` now
+  defaults to `false`. The in-app banner that previously rendered above
+  every screen sat outside `MaterialApp`, so it had no Directionality /
+  Overlay ancestor and could cascade into hit-test failures on apps
+  using `CustomScrollView` / `Stack`-heavy layouts. The error CATCHER
+  (which feeds `inkpal_get_runtime_errors` and the bridge's error
+  stream) is a separate subsystem and keeps running regardless of the
+  flag. Pass `enableErrorBoundary: true` to restore the previous banner.
+- **Semantics walker stability.** `captureScreenContext` no longer
+  dispose-and-re-acquires the semantics handle on every call. The
+  always-re-acquire pattern triggered Flutter's
+  `debugFrameWasSentToEngine` assertion when the capture ran outside
+  a build phase (typical for VM-service callbacks). Re-acquire is now
+  only triggered when the handle is missing.
+- **Error overlay layout fix** (only relevant if you opt in to it):
+  uses `Align` instead of `Positioned(top:0)` so the subtree gets
+  finite constraints, wraps in its own `Directionality` since the
+  boundary sits above `MaterialApp`, and drops the `Tooltip` on the
+  dismiss button (Tooltip needs an `Overlay` ancestor).
+- **9-zone example app.** The example is now a realistic, multi-zone
+  Flutter app covering Core Debug, Visual Debug, Auto-Fix, Runtime Intel,
+  Error Intel, Visual Testing, Developer Experience, Smart Assist, and
+  Forms — each zone planted with the kind of patterns an AI assistant
+  is expected to detect, explain, and act on against a real running app.
+- **Smoke test suite covering boot + navigation + grid layout** in
+  `example/test/smoke_test.dart`.
+- **`inkpalRunApp` package-level dartdoc** clarified — single recommended
+  entry point, with `InkPalBridge.init` documented as the power-user
+  / release-mode path.
+
 ## 1.5.0
 
 - **Stability milestone.** `inkpalRunApp` is now the single recommended

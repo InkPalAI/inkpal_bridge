@@ -1,63 +1,70 @@
-/// inkpal_bridge example — multi-zone showcase.
+/// inkpal_bridge example — bridge showcase.
 ///
-/// Modelled on the InkPal "battlefield" battle-test app: each zone
-/// exercises a specific bridge capability so an AI agent (or a human
-/// reading this code) can immediately see what the bridge enables.
+/// A 9-zone Flutter app exercising every capability the bridge exposes to
+/// an AI assistant. Each zone is built around realistic patterns an AI
+/// would see in real apps: layout bugs, error-handling foot-guns, form
+/// flows, scrollable lists, runtime state, visual-regression baselines.
 ///
 /// Zones:
-///   • Counter zone     — basic state, taps, screenshot diff
-///   • Forms zone       — text input + form validation
-///   • List zone        — scroll, tap-by-text discovery
-///   • Custom-widgets   — `walkerHooks` teaching the bridge to recognise a
-///                         proprietary `BrandButton` widget
+///   • Core Debug      — overflow, constraints, rebuild loops
+///   • Visual Debug    — clipped text, contrast, tap-target sizing
+///   • Auto-Fix        — patches the bridge can suggest + apply
+///   • Runtime Intel   — live tree, state, timers, gesture conflicts
+///   • Error Intel     — throw paths the catcher should map
+///   • Visual Testing  — golden + regression + responsive
+///   • Developer Exp.  — chat, inline hints, history surfaces
+///   • Smart Assist    — a11y, responsive, animation suggestions
+///   • Forms & Input   — fields, scroll, switches, sliders
 ///
 /// Run with:
-///   `flutter run -d <device> --dart-define=INKPAL_LICENSE_KEY=ink_your_key_here`
+///   `flutter run -d <device>`
+///   (optionally pass `--dart-define=INKPAL_LICENSE_KEY=ink_your_key`)
 library;
 
 import 'package:flutter/material.dart';
 import 'package:inkpal_bridge/inkpal_bridge.dart';
 
+import 'test_zones/auto_fix_zone.dart';
+import 'test_zones/core_debug_zone.dart';
+import 'test_zones/dx_zone.dart';
+import 'test_zones/error_intel_zone.dart';
+import 'test_zones/forms_zone.dart';
+import 'test_zones/runtime_zone.dart';
+import 'test_zones/smart_assist_zone.dart';
+import 'test_zones/visual_debug_zone.dart';
+import 'test_zones/visual_testing_zone.dart';
+
+int _appBootCount = 0;
+
 void main() {
+  _appBootCount++;
   inkpalRunApp(
-    const ExampleApp(),
+    const BridgeShowcaseApp(),
     licenseKey: const String.fromEnvironment('INKPAL_LICENSE_KEY'),
-
-    // Help the AI agent navigate by name
-    knownRoutes: const ['/', '/forms', '/list', '/custom'],
-    routeDescriptions: const {
-      '/': 'Counter zone — basic stateful demo',
-      '/forms': 'Forms zone — text input + validation',
-      '/list': 'List zone — scrollable items',
-      '/custom': 'Custom-widget zone — BrandButton demo',
-    },
-
-    // Expose state so /inkpal:state_capture has something to snapshot
-    globalStateProvider: () async => {
-      'time_ms': DateTime.now().millisecondsSinceEpoch,
-      'theme': 'dark',
-    },
-
-    // Teach the semantics walker about proprietary widgets that don't
-    // expose standard Material/Cupertino semantics. The AI agent can then
-    // tap them by their human label without you adding `Semantics(label:)`
-    // wrappers to every callsite.
-    walkerHooks: InkPalWalkerHooks(
-      isInteractiveWidget: (widget) => widget is BrandButton,
-      extractTextFrom: (widget) =>
-          widget is BrandButton ? widget.label : null,
-    ),
+    globalStateProvider: _showcaseStateProvider,
   );
 }
 
-class ExampleApp extends StatelessWidget {
-  const ExampleApp({super.key});
+/// Demo state provider so `state_capture` / `state_get` / `state_diff` have
+/// something to introspect. A production app would surface its real store
+/// here (Riverpod ProviderContainer, Bloc state map, etc.).
+Future<Map<String, dynamic>> _showcaseStateProvider() async {
+  return {
+    'boot_count': _appBootCount,
+    'wall_clock_ms': DateTime.now().millisecondsSinceEpoch,
+  };
+}
+
+class BridgeShowcaseApp extends StatelessWidget {
+  const BridgeShowcaseApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'inkpal_bridge example',
+      title: 'InkPal Bridge Showcase',
       debugShowCheckedModeBanner: false,
+      navigatorKey: inkpalNavigatorKey,
+      navigatorObservers: [inkpalNavigatorObserver],
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
           seedColor: const Color(0xFF6750A4),
@@ -65,267 +72,217 @@ class ExampleApp extends StatelessWidget {
         ),
         useMaterial3: true,
       ),
-      // `inkpalRunApp` already wraps the root in a RepaintBoundary tagged
-      // with `inkpalRootRepaintKey` and installs the package-wide
-      // `inkpalNavigatorObserver`, so no manual wiring is required here.
-      navigatorObservers: [inkpalNavigatorObserver],
-      home: const HomeShell(),
-      routes: {
-        '/forms': (_) => const FormsZone(),
-        '/list': (_) => const ListZone(),
-        '/custom': (_) => const CustomWidgetsZone(),
-      },
+      home: const HomePage(),
     );
   }
 }
 
-// ─── Home shell with zone navigation ────────────────────────────────────
-
-class HomeShell extends StatefulWidget {
-  const HomeShell({super.key});
-
-  @override
-  State<HomeShell> createState() => _HomeShellState();
-}
-
-class _HomeShellState extends State<HomeShell> {
-  int _counter = 0;
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('inkpal_bridge example')),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              'Counter: $_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                FilledButton.tonal(
-                  onPressed: () => setState(() => _counter--),
-                  child: const Text('Decrement'),
-                ),
-                const SizedBox(width: 12),
-                FilledButton(
-                  onPressed: () => setState(() => _counter++),
-                  child: const Text('Increment'),
-                ),
-              ],
-            ),
-            const Divider(height: 32),
-            Text('Zones',
-                style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 8),
-            _ZoneTile('Forms', '/forms', Icons.edit_note),
-            _ZoneTile('List', '/list', Icons.list_alt),
-            _ZoneTile('Custom widgets (walkerHooks)', '/custom',
-                Icons.widgets),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ZoneTile extends StatelessWidget {
-  const _ZoneTile(this.label, this.route, this.icon);
-  final String label;
-  final String route;
-  final IconData icon;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: ListTile(
-        leading: Icon(icon),
-        title: Text(label),
-        trailing: const Icon(Icons.chevron_right),
-        onTap: () => Navigator.pushNamed(context, route),
-      ),
-    );
-  }
-}
-
-// ─── Forms zone ─────────────────────────────────────────────────────────
-
-class FormsZone extends StatefulWidget {
-  const FormsZone({super.key});
-
-  @override
-  State<FormsZone> createState() => _FormsZoneState();
-}
-
-class _FormsZoneState extends State<FormsZone> {
-  final _formKey = GlobalKey<FormState>();
-  final _emailCtrl = TextEditingController();
-  String? _result;
-
-  @override
-  void dispose() {
-    _emailCtrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Forms')),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              TextFormField(
-                controller: _emailCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Email',
-                  hintText: 'you@example.com',
-                ),
-                validator: (v) =>
-                    (v == null || !v.contains('@')) ? 'Invalid email' : null,
-              ),
-              const SizedBox(height: 16),
-              FilledButton(
-                onPressed: () {
-                  if (_formKey.currentState!.validate()) {
-                    setState(() => _result = 'Submitted: ${_emailCtrl.text}');
-                  }
-                },
-                child: const Text('Submit'),
-              ),
-              if (_result != null) ...[
-                const SizedBox(height: 24),
-                Text(_result!, style: const TextStyle(color: Colors.green)),
-              ],
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ─── List zone ──────────────────────────────────────────────────────────
-
-class ListZone extends StatelessWidget {
-  const ListZone({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('List')),
-      body: ListView.builder(
-        itemCount: 50,
-        itemBuilder: (_, i) => ListTile(
-          leading: CircleAvatar(child: Text('${i + 1}')),
-          title: Text('Item ${i + 1}'),
-          subtitle: Text('Tap to see how the bridge resolves "Item ${i + 1}"'),
-          onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Tapped Item ${i + 1}')),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ─── Custom-widgets zone (the walkerHooks story) ────────────────────────
-
-/// A proprietary widget that doesn't extend any standard Material widget.
-/// Without `walkerHooks`, an AI agent walking the semantics tree would see
-/// the inner GestureDetector but not know what this button is "called" or
-/// that it's interactive. With `walkerHooks` (wired in main()), the agent
-/// can ask "tap the Save button" and the bridge resolves it correctly.
-class BrandButton extends StatelessWidget {
-  const BrandButton({
-    super.key,
-    required this.label,
-    required this.onPressed,
+class TestCategory {
+  const TestCategory({
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.color,
+    required this.builder,
   });
 
-  final String label;
-  final VoidCallback onPressed;
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final Color color;
+  final WidgetBuilder builder;
+}
+
+class HomePage extends StatelessWidget {
+  const HomePage({super.key});
+
+  static const List<TestCategory> _categories = [
+    TestCategory(
+      title: 'Core Debug',
+      subtitle: 'Overflow, constraints, rebuilds',
+      icon: Icons.bug_report,
+      color: Color(0xFFEF5350),
+      builder: _buildCoreDebug,
+    ),
+    TestCategory(
+      title: 'Visual Debug',
+      subtitle: 'Screenshot → issue detection',
+      icon: Icons.center_focus_strong,
+      color: Color(0xFFAB47BC),
+      builder: _buildVisualDebug,
+    ),
+    TestCategory(
+      title: 'Auto-Fix',
+      subtitle: 'One-click safe patches',
+      icon: Icons.auto_fix_high,
+      color: Color(0xFF42A5F5),
+      builder: _buildAutoFix,
+    ),
+    TestCategory(
+      title: 'Runtime Intel',
+      subtitle: 'Live tree, state, frame drops',
+      icon: Icons.bolt,
+      color: Color(0xFFFFA726),
+      builder: _buildRuntime,
+    ),
+    TestCategory(
+      title: 'Error Intel',
+      subtitle: 'Root cause + plain English',
+      icon: Icons.psychology,
+      color: Color(0xFF26A69A),
+      builder: _buildErrorIntel,
+    ),
+    TestCategory(
+      title: 'Visual Testing',
+      subtitle: 'Regression + multi-device',
+      icon: Icons.compare,
+      color: Color(0xFF66BB6A),
+      builder: _buildVisualTesting,
+    ),
+    TestCategory(
+      title: 'DX',
+      subtitle: 'Setup, chat, history',
+      icon: Icons.terminal,
+      color: Color(0xFF8D6E63),
+      builder: _buildDx,
+    ),
+    TestCategory(
+      title: 'Smart Assist',
+      subtitle: 'A11y, responsive, hints',
+      icon: Icons.tips_and_updates,
+      color: Color(0xFFEC407A),
+      builder: _buildSmartAssist,
+    ),
+    TestCategory(
+      title: 'Forms',
+      subtitle: 'TextFields, scroll, controls',
+      icon: Icons.text_fields,
+      color: Color(0xFF7E57C2),
+      builder: _buildForms,
+    ),
+  ];
+
+  static Widget _buildCoreDebug(BuildContext _) => const CoreDebugZone();
+  static Widget _buildVisualDebug(BuildContext _) => const VisualDebugZone();
+  static Widget _buildAutoFix(BuildContext _) => const AutoFixZone();
+  static Widget _buildRuntime(BuildContext _) => const RuntimeZone();
+  static Widget _buildErrorIntel(BuildContext _) => const ErrorIntelZone();
+  static Widget _buildVisualTesting(BuildContext _) =>
+      const VisualTestingZone();
+  static Widget _buildDx(BuildContext _) => const DxZone();
+  static Widget _buildSmartAssist(BuildContext _) => const SmartAssistZone();
+  static Widget _buildForms(BuildContext _) => const FormsZone();
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onPressed,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFF6750A4), Color(0xFFB8A4E1)],
-          ),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Text(
-          label,
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+    return Scaffold(
+      body: SafeArea(
+        child: CustomScrollView(
+          slivers: [
+            const SliverToBoxAdapter(child: _Header()),
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+              sliver: SliverGrid(
+                gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                  maxCrossAxisExtent: 220,
+                  mainAxisSpacing: 12,
+                  crossAxisSpacing: 12,
+                  childAspectRatio: 1,
+                ),
+                delegate: SliverChildBuilderDelegate(
+                  (context, i) => _CategoryCard(category: _categories[i]),
+                  childCount: _categories.length,
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 }
 
-class CustomWidgetsZone extends StatefulWidget {
-  const CustomWidgetsZone({super.key});
-
-  @override
-  State<CustomWidgetsZone> createState() => _CustomWidgetsZoneState();
-}
-
-class _CustomWidgetsZoneState extends State<CustomWidgetsZone> {
-  String _last = '(nothing yet)';
+class _Header extends StatelessWidget {
+  const _Header();
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Custom widgets')),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const Text(
-              'These BrandButtons are proprietary widgets with no built-in '
-              'Semantics. The walkerHooks wired in main() teach the AI '
-              'agent to recognise them by label.',
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'InkPal Bridge Showcase',
+            style: theme.textTheme.headlineMedium?.copyWith(
+              fontWeight: FontWeight.w700,
             ),
-            const SizedBox(height: 24),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                BrandButton(
-                  label: 'Save',
-                  onPressed: () => setState(() => _last = 'Save'),
-                ),
-                const SizedBox(width: 12),
-                BrandButton(
-                  label: 'Cancel',
-                  onPressed: () => setState(() => _last = 'Cancel'),
-                ),
-              ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Pick a zone to see how an AI assistant sees, drives, and '
+            'debugs your real Flutter app.',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
             ),
-            const SizedBox(height: 24),
-            Center(
-              child: BrandButton(
-                label: 'Submit Order',
-                onPressed: () => setState(() => _last = 'Submit Order'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CategoryCard extends StatelessWidget {
+  const _CategoryCard({required this.category});
+
+  final TestCategory category;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final keySlug = category.title.toLowerCase().replaceAll(' ', '_');
+    return Material(
+      key: ValueKey('zone_card_$keySlug'),
+      color: category.color.withOpacity(0.14),
+      borderRadius: BorderRadius.circular(20),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: category.builder,
+            settings: RouteSettings(name: '/$keySlug'),
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: category.color.withOpacity(0.25),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(category.icon, color: category.color, size: 24),
               ),
-            ),
-            const SizedBox(height: 32),
-            Text('Last tapped: $_last', textAlign: TextAlign.center),
-          ],
+              const Spacer(),
+              Text(
+                category.title,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                category.subtitle,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

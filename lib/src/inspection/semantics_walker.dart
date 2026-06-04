@@ -54,13 +54,15 @@ class SemanticsWalker {
   ///    that don't surface as a unique SemanticsNode but matter for
   ///    AI tooling that addresses widgets by their design-system key.
   ScreenContext captureScreenContext() {
-    // B5 fix: re-ensure semantics on every capture. After multiple push/pop
-    // navigation cycles the original SemanticsHandle can become detached
-    // from the current PipelineOwner, leaving semanticsOwner null even
-    // though the widget tree is fully rendered. Re-acquiring the handle is
-    // cheap (reference-counted inside the framework) and guarantees the
-    // semantics tree stays enabled.
-    _reensureSemantics();
+    // Re-ensure semantics ONLY if the handle was lost. The previous
+    // every-call dispose+re-acquire pattern triggered Flutter's
+    // `debugFrameWasSentToEngine` assertion when the capture ran outside
+    // a build phase (typical for VM-service callbacks), which the bridge
+    // then caught and surfaced as a Flutter error — masking real failures
+    // and activating the error overlay on every tap.
+    if (_semanticsHandle == null) {
+      _reensureSemantics();
+    }
 
     final views = WidgetsBinding.instance.renderViews;
     if (views.isEmpty) {
