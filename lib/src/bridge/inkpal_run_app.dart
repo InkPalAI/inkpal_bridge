@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 
+import '../inspection/walker_hooks.dart';
 import '../network/http_monitor.dart';
 import '../telemetry/error_catcher.dart';
 import '../ui/error_boundary.dart';
@@ -55,6 +56,10 @@ void inkpalRunApp(
   int screenshotWidth = 720,
   GlobalKey<NavigatorState>? navigatorKey,
   Future<Map<String, dynamic>> Function()? globalStateProvider,
+  List<String> knownRoutes = const [],
+  Map<String, String> routeDescriptions = const {},
+  Future<void> Function(String routeName)? onNavigateToRoute,
+  InkPalWalkerHooks? walkerHooks,
 }) {
   if (kReleaseMode && !runInRelease) {
     runApp(app);
@@ -101,6 +106,10 @@ void inkpalRunApp(
       navigatorKey: navigatorKey ?? inkpalNavigatorKey,
       navigatorObserver: inkpalNavigatorObserver,
       globalStateProvider: globalStateProvider,
+      knownRoutes: knownRoutes,
+      routeDescriptions: routeDescriptions,
+      onNavigateToRoute: onNavigateToRoute,
+      walkerHooks: walkerHooks,
       appRunner: () => runApp(root),
       errorCatcher: catcher,
       httpMonitor: monitor,

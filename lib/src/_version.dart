@@ -8,4 +8,4 @@
 /// We avoid `package_info_plus` (third-party dep — banned in this package)
 /// and a build-time codegen step (we want the package usable as a path dep
 /// without `build_runner`). Manual sync is the cost of zero-deps.
-const String inkpalBridgeVersion = '1.4.5';
+const String inkpalBridgeVersion = '1.5.0';

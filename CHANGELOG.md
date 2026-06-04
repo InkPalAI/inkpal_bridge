@@ -1,3 +1,25 @@
+## 1.5.0
+
+- **Stability milestone.** `inkpalRunApp` is now the single recommended
+  entry point and exposes the full configuration surface. Power-user
+  flags previously reachable only through `InkPalBridge.init`
+  (`knownRoutes`, `routeDescriptions`, `onNavigateToRoute`, `walkerHooks`)
+  are now first-class parameters on `inkpalRunApp`.
+- **Example app updated** to demonstrate the recommended pattern —
+  multi-zone showcase (counter / forms / list / custom widgets) booted
+  with one `inkpalRunApp(...)` call, no manual bridge wiring.
+- **Example smoke test added** (`example/test/smoke_test.dart`) — three
+  widget tests covering boot, counter interaction, and route navigation.
+- **Package-level dartdoc rewritten** to lead with the one-line
+  `inkpalRunApp(MyApp())` setup. `InkPalBridge.init` is documented as the
+  power-user / release-mode path.
+- **Version constant synced.** `inkpalBridgeVersion` is now bumped in
+  lockstep with the pubspec; `ext.flutter.inkpal.ping` reports the real
+  shipping version.
+- Manual `InkPalBridge.init` and direct exports (`InkPalErrorCatcher`,
+  `InkPalHttpMonitor`, `InkPalErrorBoundary`, etc.) remain fully
+  supported — no breaking changes.
+
 ## 1.4.7
 
 - `inkpalRunApp` now works without any license key. The bridge starts

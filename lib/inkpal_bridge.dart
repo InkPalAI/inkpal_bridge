@@ -1,17 +1,21 @@
 /// InkPal Bridge — in-app intelligence for AI-powered Flutter development.
 ///
-/// Add to your app:
+/// One-line setup:
 /// ```dart
 /// import 'package:inkpal_bridge/inkpal_bridge.dart';
 ///
-/// void main() {
-///   InkPalBridge.init(
-///     serverUrl: 'ws://localhost:8765',
-///     appRunner: () => runApp(const MyApp()),
-///     licenseKey: 'ink_your_key_here',
-///   );
-/// }
+/// void main() => inkpalRunApp(const MyApp());
 /// ```
+///
+/// No license key, signup, or flags required. The bridge starts itself,
+/// prints a welcome banner, and begins watching for errors, navigation,
+/// and HTTP traffic. Release builds collapse `inkpalRunApp` to a plain
+/// `runApp(app)` with zero overhead.
+///
+/// For full power-user configuration (custom widgets, named routes,
+/// app-state exposure, custom router callbacks), see `inkpalRunApp` and
+/// `InkPalWalkerHooks`. For release-mode shipping or fine-grained
+/// subsystem control, see `InkPalBridge.init`.
 library;
 
 export 'src/bridge/inkpal_bridge.dart';

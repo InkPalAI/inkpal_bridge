@@ -12,7 +12,7 @@ Works with Claude Code, Cursor, Windsurf, Codex CLI, and Copilot in VS Code.
 ```yaml
 # pubspec.yaml
 dependencies:
-  inkpal_bridge: ^1.4.7
+  inkpal_bridge: ^1.5.0
 ```
 
 ```dart

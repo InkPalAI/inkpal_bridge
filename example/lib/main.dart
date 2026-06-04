@@ -19,14 +19,13 @@ import 'package:flutter/material.dart';
 import 'package:inkpal_bridge/inkpal_bridge.dart';
 
 void main() {
-  InkPalBridge.init(
-    serverUrl: 'ws://localhost:8765',
-    appRunner: () => runApp(const ExampleApp()),
+  inkpalRunApp(
+    const ExampleApp(),
     licenseKey: const String.fromEnvironment('INKPAL_LICENSE_KEY'),
 
     // Help the AI agent navigate by name
-    knownRoutes: ['/', '/forms', '/list', '/custom'],
-    routeDescriptions: {
+    knownRoutes: const ['/', '/forms', '/list', '/custom'],
+    routeDescriptions: const {
       '/': 'Counter zone — basic stateful demo',
       '/forms': 'Forms zone — text input + validation',
       '/list': 'List zone — scrollable items',
@@ -66,16 +65,11 @@ class ExampleApp extends StatelessWidget {
         ),
         useMaterial3: true,
       ),
-      // Standard bridge wiring — both lines are optional but enable
-      // navigate_back + faster screenshots respectively.
-      navigatorObservers: [
-        if (InkPalBridge.instance != null)
-          InkPalBridge.instance!.navigatorObserver,
-      ],
-      home: RepaintBoundary(
-        key: InkPalBridge.instance?.repaintBoundaryKey,
-        child: const HomeShell(),
-      ),
+      // `inkpalRunApp` already wraps the root in a RepaintBoundary tagged
+      // with `inkpalRootRepaintKey` and installs the package-wide
+      // `inkpalNavigatorObserver`, so no manual wiring is required here.
+      navigatorObservers: [inkpalNavigatorObserver],
+      home: const HomeShell(),
       routes: {
         '/forms': (_) => const FormsZone(),
         '/list': (_) => const ListZone(),
